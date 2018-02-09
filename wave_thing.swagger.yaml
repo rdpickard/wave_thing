@@ -7,6 +7,23 @@ info:
 
 components:
   schemas:
+    data_spec_data_point:
+      properties:
+        utc_timestamp:
+          type: string
+          example: "2018-02-09T18:40:00+00:00"
+        seperation_frequency:
+          type: number
+          example: 0.098
+        density_direction_sample_pairs:
+          type: array
+          items:
+            type: array
+            items:
+                type: number
+            minItems: 2
+            maxItems: 2
+          example: [[0.0, .033], [0.132, 0.053]]
     spec_data_point:
       properties:
         utc_timestamp:
@@ -136,6 +153,8 @@ paths:
           description: Error talking to NOAA
           schema:
             $ref: '#/components/schemas/error_message'
+        '404':
+          description: The buoy or data set for a buoy was not found
   /api/buoytalk/{buoy_id}/spec:
     parameters:
       - in: path
@@ -169,3 +188,40 @@ paths:
           description: Error talking to NOAA
           schema:
             $ref: '#/components/schemas/error_message'
+        '404':
+          description: The buoy or data set for a buoy was not found
+  /api/buoytalk/{buoy_id}/data_spec:
+    parameters:
+      - in: path
+        name: buoy_id
+        description: The ID of the buoy to query
+        required: true
+        type: string
+    get:
+      summary: Fetch RAW spectral wave summaries
+      responses:
+        '200':
+          description: Request OK
+          schema:
+            properties:
+              buoy_id:
+                type: string
+                example: "1234"
+              data_type:
+                type: string
+                enum:
+                  - txt
+              request_timestamp_utc:
+                type: string
+                example: "2018-02-09T19:57:47.414577+00:00"
+              data_points:
+                type: array
+                items:
+                  $ref: '#/components/schemas/data_spec_data_point'
+
+        '502':
+          description: Error talking to NOAA
+          schema:
+            $ref: '#/components/schemas/error_message'
+        '404':
+          description: The buoy or data set for a buoy was not found

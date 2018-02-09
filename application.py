@@ -20,7 +20,6 @@ __maintainer__ = "Robert Daniel Pickard"
 __email__ = "codez@chalkfarm.org"
 __status__ = "Caveat Emptor"
 
-
 application = flask.Flask(__name__)
 api = flask_restful.Api(application)
 
@@ -50,9 +49,11 @@ def timestamp_from_noaa_format_and_normalize_for_missing_data(line_data):
     # Convert the strings that should be numbers into floats. If a value is missing the
     # NOAA API returns "MM" as a value. Change these to 'crap' which will later be convered
     # in None values.
-    # The intermediate 'crap' step is needed because None evaluates to False in pyhton so
+    # The intermediate 'crap' step is needed because None evaluates to False in python so
     # that will throw off the mapping function
-    line_data[5:] = list(map(lambda v: v == "MM" and "crap" or v.replace(".","").replace("-","").replace("+","").isnumeric() and float(v) or v, line_data[5:]))
+    line_data[5:] = list(map(
+        lambda v: v == "MM" and "crap" or v.replace(".", "").replace("-", "").replace("+", "").isnumeric() and float(
+            v) or v, line_data[5:]))
 
     # Convert "crap" place holders in None values
     i = 0
@@ -62,6 +63,25 @@ def timestamp_from_noaa_format_and_normalize_for_missing_data(line_data):
         i += 1
 
     return timestamp, line_data
+
+
+def data_spec_response_to_data_points(timestamp, line_data):
+
+    data_point = {"utc_timestamp": str(timestamp),
+                  "seperation_frequency": line_data[5],
+                  "density_direction_sample_pairs": []}
+
+    # need to re-map the data_spec values again because there is some mark up
+    # where the wave direction in the denisity+direction pairs are inside of a parentheses
+    # '0.000', '(0.033)', '0.000', '(0.038)', '0.000', '(0.043)' ...
+    # This makes all values into floats
+    line_data[5:] = list(map(lambda v: float(str(v).replace("(", "").replace(")", "")), line_data[5:]))
+
+    # The rest of the data is pairs of density and direction measurement
+    samples = line_data[6:]
+    data_point["density_direction_sample_pairs"] = list(zip(*[samples[i::2] for i in range(2)]))
+
+    return data_point
 
 
 def spec_response_to_data_points(timestamp, line_data):
@@ -80,7 +100,6 @@ def spec_response_to_data_points(timestamp, line_data):
 
 
 def cwind_response_to_data_points(timestamp, line_data):
-
     return {"utc_timestamp": str(timestamp),
             "10_minute_average_wind_direction": line_data[5],
             "10_minute_average_wind_speed": line_data[6],
@@ -91,7 +110,6 @@ def cwind_response_to_data_points(timestamp, line_data):
 
 
 def drift_response_to_data_points(timestamp, line_data):
-
     return {"utc_timestamp": str(timestamp),
             "heat": line_data[5],
             "ice": line_data[6],
@@ -101,7 +119,6 @@ def drift_response_to_data_points(timestamp, line_data):
 
 
 def txt_response_to_data_points(timestamp, line_data):
-
     data_point = {"utc_timestamp": str(timestamp),
                   "wind_direction": line_data[5],
                   "wind_speed": line_data[6],
@@ -120,11 +137,14 @@ def txt_response_to_data_points(timestamp, line_data):
 
     return data_point
 
+
+# This is mapping from each of the data set types that NOAA supports to a decoding function that
+# knows what each element signifies by it's position in a line of response from the NOAA API
 noaa_data_sets = {"txt": txt_response_to_data_points,
                   "drift": drift_response_to_data_points,
                   "cwind": cwind_response_to_data_points,
                   "spec": spec_response_to_data_points,
-                  "data_spec": not_implemented,
+                  "data_spec": data_spec_response_to_data_points,
                   "swdir": not_implemented,
                   "swdir2": not_implemented,
                   "swr1": not_implemented,
@@ -137,6 +157,7 @@ noaa_data_sets = {"txt": txt_response_to_data_points,
 class BuoyTalk(flask_restful.Resource):
     def get(self, buoy_id, buoy_data_type):
 
+        print("HEREERERER")
         # figure out the desired response format, json or XML
         response_mime = flask.request.accept_mimetypes.best_match(['application/json', 'application/xml'])
 
@@ -151,7 +172,9 @@ class BuoyTalk(flask_restful.Resource):
         bouy_request_url = noaa_buoy_url.format(buoyid=buoy_id, data_type=buoy_data_type)
         bouy_request = requests.get(bouy_request_url)
 
-        if bouy_request.status_code != 200:
+        if bouy_request.status_code == 404:
+            return flask.Response("", status=404)
+        elif bouy_request.status_code != 200:
             # The request to NOAA failed. Since this script didn't itself fail return a 502: bad gateway message
             response = {
                 "message": "NOAA URL {noaa_url} returned response code {request_status_code}. Expecting 200".format(
@@ -174,10 +197,12 @@ class BuoyTalk(flask_restful.Resource):
             # Ignore the comment lines that start with hash
             data_lines = filter(lambda line: not line.startswith("#"), bouy_request.text.splitlines())
 
+            # Loop over the remaining lines and pass the content to the appropriate decoding function as
+            # that is mapped to the data type string. IE data type 'txt' -> txt_response_to_data_points
             for data_line in data_lines:
-                print(data_line)
                 buoy_response["data_points"].append(
-                    noaa_data_sets[buoy_data_type](*timestamp_from_noaa_format_and_normalize_for_missing_data(data_line.split()))
+                    noaa_data_sets[buoy_data_type](
+                        *timestamp_from_noaa_format_and_normalize_for_missing_data(data_line.split()))
                 )
 
             if response_mime == 'application/xml':
@@ -189,8 +214,13 @@ class BuoyTalk(flask_restful.Resource):
 
 @application.route('/')
 def index():
+    """
+    Renders the 'index' page
+    :return: 
+    """
     print(str(flask.request.url_root))
     return flask.render_template('index.jinja2', my_server=flask.request.url_root)
+
 
 api.add_resource(BuoyTalk, '/api/buoytalk/<buoy_id>/<buoy_data_type>')
 
