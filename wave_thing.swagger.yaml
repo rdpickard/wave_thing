@@ -1,0 +1,171 @@
+swagger: "2.0"
+host: wavething.chalkfarm.org
+schemes: ["http"]
+info:
+  version: "0.1"
+  title: WAVE_THING RESTful API
+
+components:
+  schemas:
+    spec_data_point:
+      properties:
+        utc_timestamp:
+          type: string
+          example: "2018-02-09T18:40:00+00:00"
+        significant_wave_height:
+          type: number
+          example: 1.6
+        swell_height:
+          type: number
+          example: 1.4
+        swell_period:
+          type: number
+          example: 7.1
+        wind_wave_height:
+          type: number
+          example: 0.7
+        wind_wave_period:
+          example: 4.3
+          type: number
+        swell_direction:
+          type: string
+          example: "NE"
+        wind_wave_direction:
+          example: "ENE"
+          type: string
+        wind_steepness":
+          example: "STEEP"
+          type: string
+        average_wave_period:
+          example: 5.1
+          type: number
+        dominant_wave_agerage_direction:
+          example: 53.0
+          type: number
+
+    txt_data_point:
+      properties:
+        utc_timestamp:
+          type: string
+        wind_direction:
+          type: number
+        wind_speed:
+          type: number
+        wind_speed_gust:
+          type: number
+        signifigant_wave_height:
+          type: number
+        dominant_wave_period:
+          type: number
+        average_wave_period:
+          type: number
+        dominant_wave_direction:
+          type: number
+        sea_level_pressure:
+          type: number
+        air_temperature:
+          type: number
+        surface_sea_temperature:
+          type: number
+        dew_point_temperature:
+          type: number
+        visibility:
+          type: number
+        pressure_tendency:
+          type: number
+        tide:
+          type: number
+      example:
+        utc_timestamp: "2017-12-26T00:00:00+00:00"
+        wind_direction: 70.0
+        wind_speed: 8.0
+        wind_speed_gust: 9.0
+        signifigant_wave_height:
+        dominant_wave_period:
+        average_wave_period:
+        dominant_wave_direction:
+        sea_level_pressure: 1022.7
+        air_temperature: 22.5
+        surface_sea_temperature: 25.4
+        dew_point_temperature: 18.9
+        visibility: null,
+        pressure_tendency: 0.7
+        tide: null
+
+    error_message:
+      properties:
+        message:
+          type: string
+        upstream_code:
+          type: integer
+      example:
+        message: NOAA URL blarg returned response code 404. Expecting 200
+        upstream_code: 404
+
+paths:
+  /api/buoytalk/{buoy_id}/txt:
+    parameters:
+      - in: path
+        name: buoy_id
+        description: The ID of the buoy to query
+        required: true
+        type: string
+    get:
+      summary: Fetch standard meteorological data for a specific buoy
+      responses:
+        '200':
+          description: Request OK
+          schema:
+            properties:
+              buoy_id:
+                type: string
+                example: "1234"
+              data_type:
+                type: string
+                enum:
+                  - txt
+              request_timestamp_utc:
+                type: string
+                example: "2018-02-09T19:57:47.414577+00:00"
+              data_points:
+                type: array
+                items:
+                  $ref: '#/components/schemas/txt_data_point'
+
+        '502':
+          description: Error talking to NOAA
+          schema:
+            $ref: '#/components/schemas/error_message'
+  /api/buoytalk/{buoy_id}/spec:
+    parameters:
+      - in: path
+        name: buoy_id
+        description: The ID of the buoy to query
+        required: true
+        type: string
+    get:
+      summary: Fetch spectral wave summaries
+      responses:
+        '200':
+          description: Request OK
+          schema:
+            properties:
+              buoy_id:
+                type: string
+                example: "1234"
+              data_type:
+                type: string
+                enum:
+                  - txt
+              request_timestamp_utc:
+                type: string
+                example: "2018-02-09T19:57:47.414577+00:00"
+              data_points:
+                type: array
+                items:
+                  $ref: '#/components/schemas/spec_data_point'
+
+        '502':
+          description: Error talking to NOAA
+          schema:
+            $ref: '#/components/schemas/error_message'
