@@ -225,8 +225,15 @@ def index():
     Renders the 'index' page
     :return: 
     """
-    print(str(flask.request.url_root))
     return flask.render_template('index.jinja2', my_server=flask.request.url_root)
+
+@application.route('/docs/wave_thing_api.swagger.yaml')
+def api_docs():
+    """
+    Renders the 'index' page
+    :return: 
+    """
+    return flask.send_from_directory("docs", "wave_thing_api.swagger.yaml")
 
 
 api.add_resource(BuoyTalkResource, '/api/buoytalk/<buoy_id>/<buoy_data_type>')

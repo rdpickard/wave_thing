@@ -70,7 +70,7 @@ else:
     print(wave_thing_request.json())
 ```
 
-Full documentation of the API in SWAGGER format is in the file wave_thing.swagger.yaml. 
+Full documentation of the API in SWAGGER format is in the file docs/wave_thing_api.swagger.yaml. 
 
 ### Internet accessible WAVE_THING with AWS:
 

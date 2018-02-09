@@ -5,8 +5,7 @@ info:
   version: "0.1"
   title: WAVE_THING RESTful API
 
-components:
-  schemas:
+definitions:
     data_spec_data_point:
       properties:
         utc_timestamp:
@@ -147,12 +146,12 @@ paths:
               data_points:
                 type: array
                 items:
-                  $ref: '#/components/schemas/txt_data_point'
+                  $ref: '#/definitions/txt_data_point'
 
         '502':
           description: Error talking to NOAA
           schema:
-            $ref: '#/components/schemas/error_message'
+            $ref: '#/definitions/error_message'
         '404':
           description: The buoy or data set for a buoy was not found
   /api/buoytalk/{buoy_id}/spec:
@@ -182,12 +181,12 @@ paths:
               data_points:
                 type: array
                 items:
-                  $ref: '#/components/schemas/spec_data_point'
+                  $ref: '#/definitions/spec_data_point'
 
         '502':
           description: Error talking to NOAA
           schema:
-            $ref: '#/components/schemas/error_message'
+            $ref: '#/definitions/error_message'
         '404':
           description: The buoy or data set for a buoy was not found
   /api/buoytalk/{buoy_id}/data_spec:
@@ -217,11 +216,11 @@ paths:
               data_points:
                 type: array
                 items:
-                  $ref: '#/components/schemas/data_spec_data_point'
+                  $ref: '#/definitions/data_spec_data_point'
         '502':
           description: Error talking to NOAA
           schema:
-            $ref: '#/components/schemas/error_message'
+            $ref: '#/definitions/error_message'
         '404':
           description: The buoy or data set for a buoy was not found
   /api/buoytalk/{buoy_id}/swdir:
@@ -251,11 +250,11 @@ paths:
               data_points:
                 type: array
                 items:
-                  $ref: '#/components/schemas/data_spec_data_point'
+                  $ref: '#/definitions/data_spec_data_point'
         '502':
           description: Error talking to NOAA
           schema:
-            $ref: '#/components/schemas/error_message'
+            $ref: '#/definitions/error_message'
         '404':
           description: The buoy or data set for a buoy was not found
   /api/buoytalk/{buoy_id}/swdir2:
@@ -285,11 +284,11 @@ paths:
               data_points:
                 type: array
                 items:
-                  $ref: '#/components/schemas/data_spec_data_point'
+                  $ref: '#/definitions/data_spec_data_point'
         '502':
           description: Error talking to NOAA
           schema:
-            $ref: '#/components/schemas/error_message'
+            $ref: '#/definitions/error_message'
         '404':
           description: The buoy or data set for a buoy was not found
   /api/buoytalk/{buoy_id}/swr1:
@@ -319,11 +318,11 @@ paths:
               data_points:
                 type: array
                 items:
-                  $ref: '#/components/schemas/data_spec_data_point'
+                  $ref: '#/definitions/data_spec_data_point'
         '502':
           description: Error talking to NOAA
           schema:
-            $ref: '#/components/schemas/error_message'
+            $ref: '#/definitions/error_message'
         '404':
           description: The buoy or data set for a buoy was not found
   /api/buoytalk/{buoy_id}/swr2:
@@ -353,10 +352,10 @@ paths:
               data_points:
                 type: array
                 items:
-                  $ref: '#/components/schemas/data_spec_data_point'
+                  $ref: '#/definitions/data_spec_data_point'
         '502':
           description: Error talking to NOAA
           schema:
-            $ref: '#/components/schemas/error_message'
+            $ref: '#/definitions/error_message'
         '404':
           description: The buoy or data set for a buoy was not found
