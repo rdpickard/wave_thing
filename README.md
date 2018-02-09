@@ -52,10 +52,7 @@ curl -H "Accept: application/json"  http://127.0.0.1:5000/api/buoytalk/42001/spe
 ```
 import requests
 
-# Which buoy and 
-
-
-it's data I want
+# Which buoy and it's data I want
 desired_buoy_id=42001
 desired_buoy_data_set="txt"
 
