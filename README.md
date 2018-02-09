@@ -57,10 +57,10 @@ desired_buoy_id=42001
 desired_buoy_data_set="txt"
 
 # Make the request to the locally running instance of WAVE_THING
-wave_thing_request = requests.get(http://127.0.0.1:5000/api/buoytalk/{buoy_id}/{buoy_data_set}".format(
+wave_thing_request = requests.get("http://127.0.0.1:5000/api/buoytalk/{buoy_id}/{buoy_data_set}".format(
     buoy_id=desired_buoy_id,
-    buot_data_set=desired_buoy_data_set
-)
+    buoy_data_set=desired_buoy_data_set
+))
 
 if wave_thing_request.status_code != 200:
     # Something went wrong
@@ -68,8 +68,6 @@ if wave_thing_request.status_code != 200:
 else:
     # Print the data!
     print(wave_thing_request.json())
-    
-
 ```
 
 Full documentation of the API in SWAGGER format is in the file wave_thing.swagger.yaml. 
