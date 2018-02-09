@@ -15,7 +15,7 @@ components:
         seperation_frequency:
           type: number
           example: 0.098
-        density_direction_sample_pairs:
+        sample_pairs:
           type: array
           items:
             type: array
@@ -218,7 +218,142 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/data_spec_data_point'
-
+        '502':
+          description: Error talking to NOAA
+          schema:
+            $ref: '#/components/schemas/error_message'
+        '404':
+          description: The buoy or data set for a buoy was not found
+  /api/buoytalk/{buoy_id}/swdir:
+    parameters:
+      - in: path
+        name: buoy_id
+        description: The ID of the buoy to query
+        required: true
+        type: string
+    get:
+      summary: Fetch ALPHA 1 spectral wave summaries
+      responses:
+        '200':
+          description: Request OK
+          schema:
+            properties:
+              buoy_id:
+                type: string
+                example: "1234"
+              data_type:
+                type: string
+                enum:
+                  - txt
+              request_timestamp_utc:
+                type: string
+                example: "2018-02-09T19:57:47.414577+00:00"
+              data_points:
+                type: array
+                items:
+                  $ref: '#/components/schemas/data_spec_data_point'
+        '502':
+          description: Error talking to NOAA
+          schema:
+            $ref: '#/components/schemas/error_message'
+        '404':
+          description: The buoy or data set for a buoy was not found
+  /api/buoytalk/{buoy_id}/swdir2:
+    parameters:
+      - in: path
+        name: buoy_id
+        description: The ID of the buoy to query
+        required: true
+        type: string
+    get:
+      summary: Fetch ALPHA 2 spectral wave summaries
+      responses:
+        '200':
+          description: Request OK
+          schema:
+            properties:
+              buoy_id:
+                type: string
+                example: "1234"
+              data_type:
+                type: string
+                enum:
+                  - txt
+              request_timestamp_utc:
+                type: string
+                example: "2018-02-09T19:57:47.414577+00:00"
+              data_points:
+                type: array
+                items:
+                  $ref: '#/components/schemas/data_spec_data_point'
+        '502':
+          description: Error talking to NOAA
+          schema:
+            $ref: '#/components/schemas/error_message'
+        '404':
+          description: The buoy or data set for a buoy was not found
+  /api/buoytalk/{buoy_id}/swr1:
+    parameters:
+      - in: path
+        name: buoy_id
+        description: The ID of the buoy to query
+        required: true
+        type: string
+    get:
+      summary: Fetch R 1 spectral wave summaries
+      responses:
+        '200':
+          description: Request OK
+          schema:
+            properties:
+              buoy_id:
+                type: string
+                example: "1234"
+              data_type:
+                type: string
+                enum:
+                  - txt
+              request_timestamp_utc:
+                type: string
+                example: "2018-02-09T19:57:47.414577+00:00"
+              data_points:
+                type: array
+                items:
+                  $ref: '#/components/schemas/data_spec_data_point'
+        '502':
+          description: Error talking to NOAA
+          schema:
+            $ref: '#/components/schemas/error_message'
+        '404':
+          description: The buoy or data set for a buoy was not found
+  /api/buoytalk/{buoy_id}/swr2:
+    parameters:
+      - in: path
+        name: buoy_id
+        description: The ID of the buoy to query
+        required: true
+        type: string
+    get:
+      summary: Fetch R 2 spectral wave summaries
+      responses:
+        '200':
+          description: Request OK
+          schema:
+            properties:
+              buoy_id:
+                type: string
+                example: "1234"
+              data_type:
+                type: string
+                enum:
+                  - txt
+              request_timestamp_utc:
+                type: string
+                example: "2018-02-09T19:57:47.414577+00:00"
+              data_points:
+                type: array
+                items:
+                  $ref: '#/components/schemas/data_spec_data_point'
         '502':
           description: Error talking to NOAA
           schema:

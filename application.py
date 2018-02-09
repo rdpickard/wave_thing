@@ -65,21 +65,29 @@ def timestamp_from_noaa_format_and_normalize_for_missing_data(line_data):
     return timestamp, line_data
 
 
-def data_spec_response_to_data_points(timestamp, line_data):
-
-    data_point = {"utc_timestamp": str(timestamp),
-                  "seperation_frequency": line_data[5],
-                  "density_direction_sample_pairs": []}
+def spectral_data_remap_samples(samples):
+    """
+    The NOAA API has 5 different spectral data sets that have different meaning but are encoded
+    in a similar way. This function parses the data lines for each of the spectral data set
+    
+    :param samples: An array of samples
+    :return: A array of sample pair arrays
+    """
 
     # need to re-map the data_spec values again because there is some mark up
     # where the wave direction in the denisity+direction pairs are inside of a parentheses
     # '0.000', '(0.033)', '0.000', '(0.038)', '0.000', '(0.043)' ...
     # This makes all values into floats
-    line_data[5:] = list(map(lambda v: float(str(v).replace("(", "").replace(")", "")), line_data[5:]))
 
-    # The rest of the data is pairs of density and direction measurement
-    samples = line_data[6:]
-    data_point["density_direction_sample_pairs"] = list(zip(*[samples[i::2] for i in range(2)]))
+    samples = list(map(lambda v: float(str(v).replace("(", "").replace(")", "")), samples))
+    return list(zip(*[samples[i::2] for i in range(2)]))
+
+
+def data_spec_response_to_data_points(timestamp, line_data):
+
+    data_point = {"utc_timestamp": str(timestamp),
+                  "seperation_frequency": line_data[5],
+                  "sample_pairs": spectral_data_remap_samples(line_data[6:])}
 
     return data_point
 
@@ -145,19 +153,18 @@ noaa_data_sets = {"txt": txt_response_to_data_points,
                   "cwind": cwind_response_to_data_points,
                   "spec": spec_response_to_data_points,
                   "data_spec": data_spec_response_to_data_points,
-                  "swdir": not_implemented,
-                  "swdir2": not_implemented,
-                  "swr1": not_implemented,
-                  "swr2": not_implemented,
+                  "swdir": data_spec_response_to_data_points,
+                  "swdir2": data_spec_response_to_data_points,
+                  "swr1": data_spec_response_to_data_points,
+                  "swr2": data_spec_response_to_data_points,
                   "adcp": not_implemented,
                   "ocean": not_implemented,
                   "tide": not_implemented}
 
 
-class BuoyTalk(flask_restful.Resource):
+class BuoyTalkResource(flask_restful.Resource):
     def get(self, buoy_id, buoy_data_type):
 
-        print("HEREERERER")
         # figure out the desired response format, json or XML
         response_mime = flask.request.accept_mimetypes.best_match(['application/json', 'application/xml'])
 
@@ -222,7 +229,7 @@ def index():
     return flask.render_template('index.jinja2', my_server=flask.request.url_root)
 
 
-api.add_resource(BuoyTalk, '/api/buoytalk/<buoy_id>/<buoy_data_type>')
+api.add_resource(BuoyTalkResource, '/api/buoytalk/<buoy_id>/<buoy_data_type>')
 
 if __name__ == '__main__':
     application.run(debug=True)
