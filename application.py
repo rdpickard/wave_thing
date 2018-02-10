@@ -26,7 +26,16 @@ api = flask_restful.Api(application)
 noaa_buoy_url = "http://www.ndbc.noaa.gov/data/realtime2/{buoyid}.{data_type}"
 
 
-def not_implemented(request_response_text):
+def not_implemented(timestamp, line_data):
+    """
+    For data sets that haven't been implemented yet in wave thing, return a 501 message to the 
+    client.
+    
+    :param timestamp: There to keep consistancy with whatever_response_to_data_points functions but ignored
+    :param line_data: There to keep consistancy with whatever_response_to_data_points functions but ignored
+
+    :return: Nothing. The Flask framework handles getting the 501 to the HTTP client
+    """
     flask.abort(501)
 
 
@@ -180,6 +189,8 @@ class BuoyTalkResource(flask_restful.Resource):
         bouy_request = requests.get(bouy_request_url)
 
         if bouy_request.status_code == 404:
+            # Pass through a 404 response from NOAA to the wave_thing client. This is how NOAA indicates
+            # that a buoy does not have a data set
             return flask.Response("", status=404)
         elif bouy_request.status_code != 200:
             # The request to NOAA failed. Since this script didn't itself fail return a 502: bad gateway message
@@ -230,7 +241,7 @@ def index():
 @application.route('/docs/wave_thing_api.swagger.yaml')
 def api_docs():
     """
-    Renders the 'index' page
+    Renders the swagger documentation of the API as a download
     :return: 
     """
     return flask.send_from_directory("docs", "wave_thing_api.swagger.yaml")
