@@ -118,9 +118,9 @@ def spec_response_to_data_points(timestamp, line_data):
 
 def cwind_response_to_data_points(timestamp, line_data):
     return {"utc_timestamp": str(timestamp),
-            "10_minute_average_wind_direction": line_data[5],
-            "10_minute_average_wind_speed": line_data[6],
-            "10_minute_average_wind_gust_direction": line_data[7],
+            "ten_minute_average_wind_direction": line_data[5],
+            "ten_minute_average_wind_speed": line_data[6],
+            "ten_minute_average_wind_gust_direction": line_data[7],
             "wind_gust_hourly_peak": line_data[8],
             "wind_gust_hourly_peak_time": line_data[9]
             }
@@ -130,8 +130,8 @@ def drift_response_to_data_points(timestamp, line_data):
     return {"utc_timestamp": str(timestamp),
             "heat": line_data[5],
             "ice": line_data[6],
-            "wind_speed_10_meter_delta": line_data[7],
-            "wind_speed_20_meter_delta": line_data[8]
+            "wind_speed_ten_meter_delta": line_data[7],
+            "wind_speed_twenty_meter_delta": line_data[8]
             }
 
 
