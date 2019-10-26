@@ -10,6 +10,7 @@ import flask_restful
 from src.json2xml import Json2xml
 
 import json
+import xml.etree.ElementTree as ET
 
 __author__ = "Robert Daniel Pickard"
 __copyright__ = "None"
@@ -24,6 +25,7 @@ application = flask.Flask(__name__)
 api = flask_restful.Api(application)
 
 noaa_buoy_url = "http://www.ndbc.noaa.gov/data/realtime2/{buoyid}.{data_type}"
+noaa_stations_url = "https://www.ndbc.noaa.gov/activestations.xml"
 
 
 def not_implemented(timestamp, line_data):
@@ -171,6 +173,33 @@ noaa_data_sets = {"txt": txt_response_to_data_points,
                   "tide": not_implemented}
 
 
+def get_latest_stations_details_from_noaa():
+    """
+
+    :return:
+    """
+    application.logger.debug("requesting station details")
+    stations_request = requests.get(noaa_stations_url)
+
+    if stations_request.status_code != 200:
+        application.logger.warn("request for station details at url [{}] returned non-OK status code [{}]".format(
+            noaa_stations_url, stations_request.status_code ))
+        return None
+
+    try:
+        d = ET.fromstring(stations_request.text)
+        return d
+    except Exception as e:
+        application.logger.error("Could not parse station details XML /{}/".format(e))
+
+
+def station_detail_by_id(station_id):
+    stations_details = get_latest_stations_details_from_noaa()
+    if stations_details is not None:
+        station_elements = stations_details.findall('.//station[@id="{}"]'.format(station_id))
+        return list(map(lambda s: s.attrib, station_elements))
+
+
 class BuoyTalkResource(flask_restful.Resource):
     def get(self, buoy_id, buoy_data_type):
 
@@ -210,7 +239,18 @@ class BuoyTalkResource(flask_restful.Resource):
             buoy_response = {"buoy_id": buoy_id,
                              "data_type": buoy_data_type,
                              "data_points": [],
-                             "request_timestamp_utc": str(arrow.now('utc'))}
+                             "request_timestamp_utc": str(arrow.now('utc')),
+                             "details": None}
+
+            details = station_detail_by_id(buoy_id)
+            if len(details) > 1:
+                application.logger.info("NOAA buoy details had more than one result for id [{}]. "
+                                        "Taking first, ignoring the remainder".format(buoy_id))
+            if len(details) >= 1:
+                buoy_response["details"] = details[0]
+            else:
+                application.logger.info("NOAA had not details for buoy with id [{}]".format(buoy_id))
+
 
             # Ignore the comment lines that start with hash
             data_lines = filter(lambda line: not line.startswith("#"), bouy_request.text.splitlines())
@@ -237,6 +277,7 @@ def index():
     :return: 
     """
     return flask.render_template('index.jinja2', my_server=flask.request.url_root)
+
 
 @application.route('/docs/wave_thing_api.swagger.yaml')
 def api_docs():
