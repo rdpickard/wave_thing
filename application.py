@@ -11,6 +11,8 @@ from src.json2xml import Json2xml
 
 import json
 import xml.etree.ElementTree as ET
+import datetime
+import configparser
 
 __author__ = "Robert Daniel Pickard"
 __copyright__ = "None"
@@ -21,11 +23,19 @@ __maintainer__ = "Robert Daniel Pickard"
 __email__ = "codez@chalkfarm.org"
 __status__ = "Caveat Emptor"
 
+config = configparser.ConfigParser()
+config.read("local/configuration.ini")
+print(config.sections())
+
 application = flask.Flask(__name__)
 api = flask_restful.Api(application)
 
 noaa_buoy_url = "http://www.ndbc.noaa.gov/data/realtime2/{buoyid}.{data_type}"
 noaa_stations_url = "https://www.ndbc.noaa.gov/activestations.xml"
+
+openweather_api_key = config['DEFAULT']['OPENWEATHER_API_KEY']
+openweather_history_geo_url = "http://history.openweathermap.org/data/2.5/history/city?lat={lat}&lon={lon}&type=hour&start={start}&end={end}&APPID={APIKEY}"
+openweather_current_geo_url = "http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&APPID={APIKEY}"
 
 
 def not_implemented(timestamp, line_data):
@@ -206,6 +216,33 @@ def station_detail_by_id(station_id):
         return list(map(lambda s: s.attrib, station_elements))
 
 
+def current_weather_for_geo(lat, lon):
+
+    weather_request = requests.get(openweather_current_geo_url.format(
+        lat=lat,
+        lon=lon,
+        APIKEY=openweather_api_key
+    ))
+    if weather_request.status_code != 200:
+        application.logger.error("Could not fetch weather data. Geo request returned response code [{}]"
+                                 .format(weather_request.status_code))
+        return None
+
+    weather = {"temp_current": weather_request.json()["main"]["temp"],
+               "temp_min": weather_request.json()["main"]["temp_min"],
+               "temp_max": weather_request.json()["main"]["temp_max"],
+               "temp_unit": "K",
+               "humidity": weather_request.json()["main"]["humidity"],
+               "pressure": weather_request.json()["main"]["pressure"],
+               "pressure_unit": "hPa",
+               "visibility": weather_request.json()["visibility"],
+               "visibility_unit": "m",
+               "cloud_coverage": weather_request.json()["clouds"]["all"],
+               "cloud_coverage_unit": "%"}
+
+    return weather
+
+
 class BuoyTalkResource(flask_restful.Resource):
     def get(self, buoy_id, buoy_data_type):
 
@@ -254,6 +291,14 @@ class BuoyTalkResource(flask_restful.Resource):
                                         "Taking first, ignoring the remainder".format(buoy_id))
             if len(details) >= 1:
                 buoy_response["details"] = details[0]
+
+            if buoy_response["details"] is not None and \
+               (buoy_response["details"].get("lat", None) and buoy_response["details"].get("lon", None) is not None):
+                buoy_response["weather"] = current_weather_for_geo(buoy_response["details"]["lat"],
+                                                                   buoy_response["details"]["lon"])
+
+
+
             else:
                 application.logger.info("NOAA had not details for buoy with id [{}]".format(buoy_id))
 
