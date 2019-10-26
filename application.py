@@ -95,7 +95,6 @@ def spectral_data_remap_samples(samples):
 
 
 def data_spec_response_to_data_points(timestamp, line_data):
-
     data_point = {"utc_timestamp": str(timestamp),
                   "seperation_frequency": line_data[5],
                   "sample_pairs": spectral_data_remap_samples(line_data[6:])}
@@ -175,15 +174,16 @@ noaa_data_sets = {"txt": txt_response_to_data_points,
 
 def get_latest_stations_details_from_noaa():
     """
+    Get the latest XML document of buoy descriptive information from NOAA.
 
-    :return:
+    :return: XML as an ETree object or None if there was an error making the request
     """
     application.logger.debug("requesting station details")
     stations_request = requests.get(noaa_stations_url)
 
     if stations_request.status_code != 200:
         application.logger.warn("request for station details at url [{}] returned non-OK status code [{}]".format(
-            noaa_stations_url, stations_request.status_code ))
+            noaa_stations_url, stations_request.status_code))
         return None
 
     try:
@@ -194,6 +194,12 @@ def get_latest_stations_details_from_noaa():
 
 
 def station_detail_by_id(station_id):
+    """
+    Filter the NOAA buoy details document for just the information of a specific buoy by the ID of that buoy.
+    :param station_id: The buoy to filter on
+    :return: An array of dictionaries, key being the detail name. Array will be empty if buoy ID is not in the the
+    NOAA document.
+    """
     stations_details = get_latest_stations_details_from_noaa()
     if stations_details is not None:
         station_elements = stations_details.findall('.//station[@id="{}"]'.format(station_id))
@@ -214,20 +220,20 @@ class BuoyTalkResource(flask_restful.Resource):
                 response_data = json.dumps(response)
             return flask.Response(response_data, status=400, content_type=response_mime)
 
-        bouy_request_url = noaa_buoy_url.format(buoyid=buoy_id, data_type=buoy_data_type)
-        bouy_request = requests.get(bouy_request_url)
+        buoy_request_url = noaa_buoy_url.format(buoyid=buoy_id, data_type=buoy_data_type)
+        buoy_request = requests.get(buoy_request_url)
 
-        if bouy_request.status_code == 404:
+        if buoy_request.status_code == 404:
             # Pass through a 404 response from NOAA to the wave_thing client. This is how NOAA indicates
             # that a buoy does not have a data set
             return flask.Response("", status=404)
-        elif bouy_request.status_code != 200:
+        elif buoy_request.status_code != 200:
             # The request to NOAA failed. Since this script didn't itself fail return a 502: bad gateway message
             response = {
                 "message": "NOAA URL {noaa_url} returned response code {request_status_code}. Expecting 200".format(
-                    noaa_url=bouy_request_url,
-                    request_status_code=bouy_request.status_code),
-                "upstream code": bouy_request.status_code
+                    noaa_url=buoy_request_url,
+                    request_status_code=buoy_request.status_code),
+                "upstream code": buoy_request.status_code
             }
             if response_mime == 'application/xml':
                 response_data = Json2xml(response).json2xml()
@@ -251,9 +257,8 @@ class BuoyTalkResource(flask_restful.Resource):
             else:
                 application.logger.info("NOAA had not details for buoy with id [{}]".format(buoy_id))
 
-
             # Ignore the comment lines that start with hash
-            data_lines = filter(lambda line: not line.startswith("#"), bouy_request.text.splitlines())
+            data_lines = filter(lambda line: not line.startswith("#"), buoy_request.text.splitlines())
 
             # Loop over the remaining lines and pass the content to the appropriate decoding function as
             # that is mapped to the data type string. IE data type 'txt' -> txt_response_to_data_points
