@@ -7,11 +7,10 @@ import requests
 import arrow
 import flask
 import flask_restful
-from src.json2xml import Json2xml
+from json2xml import json2xml
 
 import json
 import xml.etree.ElementTree as ET
-import datetime
 import configparser
 
 __author__ = "Robert Daniel Pickard"
@@ -25,27 +24,30 @@ __status__ = "Caveat Emptor"
 
 config = configparser.ConfigParser()
 config.read("local/configuration.ini")
-print(config.sections())
 
 application = flask.Flask(__name__)
+# noinspection PyTypeChecker
+# P Inspection warning has been noted in flask-restful package but hasn't been rolled into a release yet
+# P see https://github.com/flask-restful/flask-restful/pull/695
 api = flask_restful.Api(application)
 
 noaa_buoy_url = "http://www.ndbc.noaa.gov/data/realtime2/{buoyid}.{data_type}"
 noaa_stations_url = "https://www.ndbc.noaa.gov/activestations.xml"
 
 openweather_api_key = config['DEFAULT']['OPENWEATHER_API_KEY']
-openweather_history_geo_url = "http://history.openweathermap.org/data/2.5/history/city?lat={lat}&lon={lon}&type=hour&start={start}&end={end}&APPID={APIKEY}"
+openweather_history_geo_url = \
+    "http://history.openweathermap.org/data/2.5/history/" \
+    "city?lat={lat}&lon={lon}&type=hour&start={start}&end={end}&APPID={APIKEY}"
 openweather_current_geo_url = "http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&APPID={APIKEY}"
 
 
-def not_implemented(timestamp, line_data):
+def not_implemented(_):
     """
     For data sets that haven't been implemented yet in wave thing, return a 501 message to the 
     client.
-    
-    :param timestamp: There to keep consistancy with whatever_response_to_data_points functions but ignored
-    :param line_data: There to keep consistancy with whatever_response_to_data_points functions but ignored
 
+    Any paramaters passed are 'eaten', nothing is done with them
+    
     :return: Nothing. The Flask framework handles getting the 501 to the HTTP client
     """
     flask.abort(501)
@@ -228,14 +230,14 @@ def current_weather_for_geo(lat, lon):
                                  .format(weather_request.status_code))
         return None
 
-    weather = {"temp_current": weather_request.json()["main"]["temp"],
-               "temp_min": weather_request.json()["main"]["temp_min"],
-               "temp_max": weather_request.json()["main"]["temp_max"],
+    weather = {"temp_current": weather_request.json()["main"].get("temp", None),
+               "temp_min": weather_request.json()["main"].get("temp_min", None),
+               "temp_max": weather_request.json()["main"].get("temp_max", None),
                "temp_unit": "K",
-               "humidity": weather_request.json()["main"]["humidity"],
-               "pressure": weather_request.json()["main"]["pressure"],
+               "humidity": weather_request.json()["main"].get("humidity", None),
+               "pressure": weather_request.json()["main"].get("pressure", None),
                "pressure_unit": "hPa",
-               "visibility": weather_request.json()["visibility"],
+               "visibility": weather_request.json().get("visibility", None),
                "visibility_unit": "m",
                "cloud_coverage": weather_request.json()["clouds"]["all"],
                "cloud_coverage_unit": "%"}
@@ -244,7 +246,8 @@ def current_weather_for_geo(lat, lon):
 
 
 class BuoyTalkResource(flask_restful.Resource):
-    def get(self, buoy_id, buoy_data_type):
+    @staticmethod
+    def get(buoy_id, buoy_data_type):
 
         # figure out the desired response format, json or XML
         response_mime = flask.request.accept_mimetypes.best_match(['application/json', 'application/xml'])
@@ -252,7 +255,10 @@ class BuoyTalkResource(flask_restful.Resource):
         if buoy_data_type not in noaa_data_sets:
             response = {"message": "Unsupported NOAA data set {buoy_data_type}".format(buoy_data_type=buoy_data_type)}
             if response_mime == 'application/xml':
-                response_data = Json2xml(response).json2xml()
+                # noinspection PyTypeChecker
+                # P inspection creates a warning about passing a dict to Json2xml instead of a string, but that is
+                # P wrong. The was Json2xml is implemented specifies a string being passed when that isn't what it wants
+                response_data = json2xml.Json2xml(response).to_xml()
             else:
                 response_data = json.dumps(response)
             return flask.Response(response_data, status=400, content_type=response_mime)
@@ -273,7 +279,10 @@ class BuoyTalkResource(flask_restful.Resource):
                 "upstream code": buoy_request.status_code
             }
             if response_mime == 'application/xml':
-                response_data = Json2xml(response).json2xml()
+                # noinspection PyTypeChecker
+                # P inspection creates a warning about passing a dict to Json2xml instead of a string, but that is
+                # P wrong. The was Json2xml is implemented specifies a string being passed when that isn't what it wants
+                response_data = json2xml.Json2xml(response).to_xml()
             else:
                 response_data = json.dumps(response)
             return flask.Response(response_data, status=502, content_type=response_mime)
@@ -297,8 +306,6 @@ class BuoyTalkResource(flask_restful.Resource):
                 buoy_response["weather"] = current_weather_for_geo(buoy_response["details"]["lat"],
                                                                    buoy_response["details"]["lon"])
 
-
-
             else:
                 application.logger.info("NOAA had not details for buoy with id [{}]".format(buoy_id))
 
@@ -314,7 +321,10 @@ class BuoyTalkResource(flask_restful.Resource):
                 )
 
             if response_mime == 'application/xml':
-                response_data = Json2xml(buoy_response).json2xml()
+                # P inspection creates a warning about passing a dict to Json2xml instead of a string, but that is
+                # P wrong. The was Json2xml is implemented specifies a string being passed when that isn't what it wants
+                # noinspection PyTypeChecker
+                response_data = json2xml.Json2xml(buoy_response).to_xml()
             else:
                 response_data = json.dumps(buoy_response)
             return flask.Response(response_data, status=200, content_type=response_mime)
@@ -338,6 +348,9 @@ def api_docs():
     return flask.send_from_directory("docs", "wave_thing_api.swagger.yaml")
 
 
+# noinspection PyTypeChecker
+# P Inspection warning has been noted in flask-restful package but hasn't been rolled into a release yet
+# P see https://github.com/flask-restful/flask-restful/pull/695
 api.add_resource(BuoyTalkResource, '/api/buoytalk/<buoy_id>/<buoy_data_type>')
 
 if __name__ == '__main__':
