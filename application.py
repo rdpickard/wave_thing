@@ -8,13 +8,13 @@ import arrow
 import flask
 import flask_restful
 from json2xml import json2xml
+import xml.etree.ElementTree as ET
+
+import json
+import configparser
 import pathlib
 import os
 import sys
-
-import json
-import xml.etree.ElementTree as ET
-import configparser
 
 __author__ = "Robert Daniel Pickard"
 __copyright__ = "None"
@@ -22,7 +22,7 @@ __credits__ = ["Robert Daniel Pickard"]
 __license__ = "MIT License"
 __version__ = ".1"
 __maintainer__ = "Robert Daniel Pickard"
-__email__ = "codez@chalkfarm.org"
+__email__ = "codez@chalkfarm.mx"
 __status__ = "Caveat Emptor"
 
 
