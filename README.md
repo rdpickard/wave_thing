@@ -15,7 +15,7 @@ Want to talk to the network of NOAA buoy's but don't want to parse the data. WAV
 
 WAVE_THING acts as a HTTP gateway for translating the tabular data of the NOAA buoy API into JSON or XML. 
 
-See it running [here](http://wavething.chalkfarm.org)
+See it running [here](https://wave-thing.herokuapp.com/)
 
 ### WAVE_THING
 WAVE_THING is a Python 3 application. To install Pyhton 3 if you don't already have it see [this guide](http://docs.python-guide.org/en/latest/starting/installation/) that covers the process for Linux, Mac OS X and Windows.
