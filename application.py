@@ -8,6 +8,9 @@ import arrow
 import flask
 import flask_restful
 from json2xml import json2xml
+import pathlib
+import os
+import sys
 
 import json
 import xml.etree.ElementTree as ET
@@ -22,10 +25,46 @@ __maintainer__ = "Robert Daniel Pickard"
 __email__ = "codez@chalkfarm.org"
 __status__ = "Caveat Emptor"
 
-config = configparser.ConfigParser()
-config.read("local/configuration.ini")
 
 application = flask.Flask(__name__)
+
+# P Configuration in python is pain in the ass
+# P try to read from a configuration ini file, either in a location specified by env or it's default
+config = {"OPENWEATHER_API_KEY": None}
+
+config_file_parsed = None
+config_file_path = os.getenv("CONFIG_FILE_PATH", "local/configuration.ini")
+
+if pathlib.Path(config_file_path).exists():
+    config_file_parsed = configparser.ConfigParser()
+    # P By default configparser will lower case all of the keys because ini comes from a dumb windows standard
+    # P setting optionxform will change it to not lower case everything
+    config_file_parsed.optionxform = str
+    config_file_parsed.read(config_file_path)
+
+    # P If the environment has a section specified use that, if not use default [DEFAULT]
+    config_section = config_file_parsed[os.getenv("CONFIG_FILE_SECTION", "DEFAULT")]
+    for key, value in config_section.items():
+        key = key.upper()
+        if key in config.keys():
+            config[key] = value
+        else:
+            application.logger.info("Skipping configuration key '{}' in file. Unexpected for application".format(key))
+# Check to see if any of the configuration settings are specified as env vars, if so grab them into the application
+# configuration
+for key in config.keys():
+    env_val = os.getenv(key, None)
+    if env_val is not None:
+        config[key] = env_val
+# Make sure all of my configuration keys have values
+bail = False
+for key, value in config.items():
+    if value is None:
+        print("Missing required configuration option '{}'".format(key))
+        bail = True
+if bail:
+    sys.exit(-1)
+
 # noinspection PyTypeChecker
 # P Inspection warning has been noted in flask-restful package but hasn't been rolled into a release yet
 # P see https://github.com/flask-restful/flask-restful/pull/695
@@ -34,7 +73,7 @@ api = flask_restful.Api(application)
 noaa_buoy_url = "http://www.ndbc.noaa.gov/data/realtime2/{buoyid}.{data_type}"
 noaa_stations_url = "https://www.ndbc.noaa.gov/activestations.xml"
 
-openweather_api_key = config['DEFAULT']['OPENWEATHER_API_KEY']
+openweather_api_key = config['OPENWEATHER_API_KEY']
 openweather_history_geo_url = \
     "http://history.openweathermap.org/data/2.5/history/" \
     "city?lat={lat}&lon={lon}&type=hour&start={start}&end={end}&APPID={APIKEY}"
