@@ -33,7 +33,7 @@ application = flask.Flask(__name__)
 config = {"OPENWEATHER_API_KEY": None}
 
 config_file_parsed = None
-config_file_path = os.getenv("CONFIG_FILE_PATH", "local/configurationORIG.ini")
+config_file_path = os.getenv("CONFIG_FILE_PATH", "local/configuration.ini")
 
 if pathlib.Path(config_file_path).exists():
     config_file_parsed = configparser.ConfigParser()
