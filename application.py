@@ -286,9 +286,14 @@ def current_weather_for_geo(lat, lon):
 
 class NOOPResource(flask_restful.Resource):
     @staticmethod
-    def get(buoy_id, buoy_data_type):
-
-        return flask.Response("OK", status=200)
+    def get():
+        response_mime = flask.request.accept_mimetypes.best_match(['application/json', 'application/xml'])
+        response_data = None
+        if response_mime == 'application/xml':
+            response_data = "<OK/>"
+        else:
+            response_data = "{}"
+        return flask.Response(response_data, status=200, content_type=response_mime)
 
 class BuoyTalkResource(flask_restful.Resource):
     @staticmethod
