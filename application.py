@@ -284,6 +284,12 @@ def current_weather_for_geo(lat, lon):
     return weather
 
 
+class NOOPResource(flask_restful.Resource):
+    @staticmethod
+    def get(buoy_id, buoy_data_type):
+
+        return flask.Response("OK", status=200)
+
 class BuoyTalkResource(flask_restful.Resource):
     @staticmethod
     def get(buoy_id, buoy_data_type):
@@ -391,6 +397,7 @@ def api_docs():
 # P Inspection warning has been noted in flask-restful package but hasn't been rolled into a release yet
 # P see https://github.com/flask-restful/flask-restful/pull/695
 api.add_resource(BuoyTalkResource, '/api/buoytalk/<buoy_id>/<buoy_data_type>')
+api.add_resource(NOOPResource, '/api/noop')
 
 if __name__ == '__main__':
     application.run(debug=True)
