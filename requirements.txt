@@ -3,7 +3,7 @@ arrow==0.15.5
 blessed==1.16.1
 botocore==1.13.46
 cement==3.0.4
-certifi==2019.11.28
+certifi==2022.12.7
 chardet==3.0.4
 Click==7.0
 colorama==0.4.3
